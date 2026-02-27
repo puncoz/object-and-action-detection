@@ -71,6 +71,22 @@ class BoundingBox(BaseModel):
     y2: float
 
 
+class DetectedObject(BaseModel):
+    """A single detected non-person object."""
+    class_id: int
+    class_name: str
+    bbox: BoundingBox
+    confidence: float
+    track_id: Optional[int] = None
+
+
+class PoseKeypoint(BaseModel):
+    """Single MoveNet keypoint in normalised image coordinates."""
+    x: float    # normalised 0-1
+    y: float    # normalised 0-1
+    conf: float
+
+
 class ActionSignals(BaseModel):
     """Detection signals contributing to action state."""
     hand_bottle_proximity: float = 0.0
@@ -85,6 +101,7 @@ class ActionResult(BaseModel):
     state: ActionState
     confidence: float = Field(..., ge=0.0, le=1.0)
     signals: ActionSignals = Field(default_factory=ActionSignals)
+    activity: str = ""
 
 
 class PersonDetection(BaseModel):
@@ -93,6 +110,8 @@ class PersonDetection(BaseModel):
     person_bbox: Optional[BoundingBox] = None
     bottle_bbox: Optional[BoundingBox] = None
     action: ActionResult
+    nearby_objects: list[DetectedObject] = []
+    pose: Optional[list[PoseKeypoint]] = None
 
 
 class SystemStatus(BaseModel):
@@ -108,6 +127,7 @@ class DetectionFrame(BaseModel):
     camera_id: str
     frame_id: int
     people: list[PersonDetection]
+    objects: list[DetectedObject] = []
     system: SystemStatus
 
 

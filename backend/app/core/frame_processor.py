@@ -13,6 +13,7 @@ from app.api.schemas import (
     ActionResult,
     ActionSignals,
     ActionState,
+    DetectedObject,
     DetectionFrame,
     PersonDetection,
     SystemStatus,
@@ -82,6 +83,7 @@ class FrameProcessor:
         # Shared state between loops (GIL protects simple assignments)
         self._latest_raw_frame: Optional[np.ndarray] = None
         self._latest_yolo_detections: List[PersonDetection] = []
+        self._latest_yolo_objects: List[DetectedObject] = []
 
         # PRIMARY: last MoveNet-based detection (updated every frame)
         self._last_movenet_detection: Optional[PersonDetection] = None
@@ -165,26 +167,30 @@ class FrameProcessor:
             # ── Run YOLO and MoveNet concurrently in threads ───────────────────
             try:
                 if self._movenet_active:
-                    yolo_dets, kp = await asyncio.gather(
+                    yolo_result, kp = await asyncio.gather(
                         asyncio.to_thread(self._yolo.detect, frame),
                         asyncio.to_thread(self._movenet.infer, frame),
                     )
+                    yolo_dets, yolo_objs = yolo_result
                 else:
-                    yolo_dets = await asyncio.to_thread(self._yolo.detect, frame)
+                    yolo_dets, yolo_objs = await asyncio.to_thread(self._yolo.detect, frame)
                     kp = None
 
                 self._latest_yolo_detections = yolo_dets
+                self._latest_yolo_objects = yolo_objs
 
                 # Classify MoveNet action for primary person
                 if yolo_dets:
                     primary = yolo_dets[0]
-                    mn_state, mn_conf, mn_signals = self._movenet.classify_action(
+                    mn_state, mn_conf, mn_signals, mn_pose = self._movenet.classify_action(
                         kp, primary.bottle_bbox
                     )
                     self._last_movenet_detection = PersonDetection(
                         track_id=primary.track_id,
                         person_bbox=primary.person_bbox,
                         bottle_bbox=primary.bottle_bbox,
+                        nearby_objects=primary.nearby_objects,
+                        pose=mn_pose,
                         action=ActionResult(
                             state=mn_state,
                             confidence=mn_conf,
@@ -197,6 +203,7 @@ class FrameProcessor:
             except Exception as e:
                 print(f"Frame detection error: {e}")
                 yolo_dets = self._latest_yolo_detections
+                yolo_objs = self._latest_yolo_objects
 
             # FPS counter
             fps_elapsed = time.time() - self._fps_start_time
@@ -221,6 +228,7 @@ class FrameProcessor:
             annotated = self._overlay.render(
                 frame,
                 merged,
+                objects=self._latest_yolo_objects,
                 fps=self._current_fps,
                 latency_ms=latency_ms,
                 status=self._status,
@@ -237,6 +245,7 @@ class FrameProcessor:
                     camera_id=self.camera_id,
                     frame_id=self._frame_count,
                     people=merged,
+                    objects=self._latest_yolo_objects,
                     system=SystemStatus(
                         fps=self._current_fps,
                         latency_ms=latency_ms,
@@ -291,17 +300,25 @@ class FrameProcessor:
 
                 if primary and primary.person_bbox:
                     crop = self._llm.crop_region(frame, primary.person_bbox)
-                    state, confidence = await self._llm.detect_action(
-                        crop, bottle_detected=primary.bottle_bbox is not None
+                    obj_names = [obj.class_name for obj in primary.nearby_objects]
+                    obj_context = (
+                        f"YOLO detected: {', '.join(obj_names)} near person. "
+                        if obj_names
+                        else "No objects detected near the person. "
+                    )
+                    state, confidence, activity = await self._llm.detect_action(
+                        crop, context=obj_context
                     )
                     self._last_llm_detection = PersonDetection(
                         track_id=primary.track_id,
                         person_bbox=primary.person_bbox,
                         bottle_bbox=primary.bottle_bbox,
+                        nearby_objects=primary.nearby_objects,
                         action=ActionResult(
                             state=state,
                             confidence=confidence,
                             signals=ActionSignals(),
+                            activity=activity,
                         ),
                     )
                 else:
@@ -344,14 +361,24 @@ class FrameProcessor:
             best = movenet or llm
             return [best] if best else []
 
+        n_persons = len(yolo_dets)
         merged: List[PersonDetection] = []
         for det in yolo_dets:
-            action = self._pick_action(det, movenet, llm, len(yolo_dets))
+            action = self._pick_action(det, movenet, llm, n_persons)
+            # Attach pose from MoveNet if track_id matches (or single-person scene)
+            mn_pose = (
+                movenet.pose
+                if movenet is not None
+                and (det.track_id == movenet.track_id or n_persons == 1)
+                else None
+            )
             merged.append(
                 PersonDetection(
                     track_id=det.track_id,
                     person_bbox=det.person_bbox,
                     bottle_bbox=det.bottle_bbox,
+                    nearby_objects=det.nearby_objects,
+                    pose=mn_pose,
                     action=action,
                 )
             )

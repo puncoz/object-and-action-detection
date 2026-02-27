@@ -15,12 +15,12 @@ import logging
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
 
-from app.api.schemas import ActionResult, ActionSignals, ActionState, BoundingBox, PersonDetection
+from app.api.schemas import ActionResult, ActionSignals, ActionState, BoundingBox, PersonDetection, PoseKeypoint
 
 logger = logging.getLogger(__name__)
 
@@ -162,36 +162,37 @@ class MoveNetDetector:
         self,
         kp: Optional[Keypoints],
         bottle_bbox: Optional[BoundingBox],
-    ) -> Tuple[ActionState, float, ActionSignals]:
+    ) -> Tuple[ActionState, float, ActionSignals, Optional[List[PoseKeypoint]]]:
         """
         Derive hydration action from pose keypoints + YOLO bottle bbox.
 
         Priority (highest first):
           drinking > cap_opening > bottle_in_hand > idle
 
-        Returns (ActionState, confidence 0-1, ActionSignals).
+        Returns (ActionState, confidence 0-1, ActionSignals, pose_keypoints_or_None).
         """
         if kp is None:
-            return ActionState.IDLE, 0.0, ActionSignals()
+            return ActionState.IDLE, 0.0, ActionSignals(), None
 
         signals = self._compute_signals(kp, bottle_bbox)
+        pose = _to_pose_keypoints(kp)
 
         # ── drinking: wrist raised to face level, bottle present ──────────────
         if bottle_bbox is not None and signals.mouth_bottle_proximity >= 0.55:
             conf = min(1.0, signals.mouth_bottle_proximity)
-            return ActionState.DRINKING, conf, signals
+            return ActionState.DRINKING, conf, signals, pose
 
         # ── cap_opening: wrist near bottle top, arm elevated ─────────────────
         if bottle_bbox is not None and signals.wrist_rotation >= 0.50:
             conf = min(1.0, signals.wrist_rotation)
-            return ActionState.CAP_OPENING, conf, signals
+            return ActionState.CAP_OPENING, conf, signals, pose
 
         # ── bottle_in_hand: wrist close to bottle centre ──────────────────────
         if bottle_bbox is not None and signals.hand_bottle_proximity >= 0.55:
             conf = min(1.0, signals.hand_bottle_proximity)
-            return ActionState.BOTTLE_IN_HAND, conf, signals
+            return ActionState.BOTTLE_IN_HAND, conf, signals, pose
 
-        return ActionState.IDLE, 0.85, signals
+        return ActionState.IDLE, 0.85, signals, pose
 
     # ── Signal computation ────────────────────────────────────────────────────
 
@@ -258,3 +259,15 @@ class MoveNetDetector:
 
 def _dist(x1: float, y1: float, x2: float, y2: float) -> float:
     return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+
+
+def _to_pose_keypoints(kp: Keypoints) -> List[PoseKeypoint]:
+    """Convert raw Keypoints to a list of PoseKeypoint schema objects."""
+    return [
+        PoseKeypoint(
+            x=float(kp.raw[i, 1]),   # MoveNet raw: [y, x, conf]
+            y=float(kp.raw[i, 0]),
+            conf=float(kp.raw[i, 2]),
+        )
+        for i in range(17)
+    ]

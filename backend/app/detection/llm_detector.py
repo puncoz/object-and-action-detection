@@ -21,24 +21,25 @@ from app.config import settings
 
 # Short prompts — fewer input tokens = lower time-to-first-token
 _SYSTEM = (
-    "You are a hydration-action classifier for a factory safety camera. "
-    "Classify what the worker is doing. Return valid JSON only."
+    "You are a factory worker activity analyzer. "
+    "Identify activity and classify any hydration actions. Return valid JSON only."
 )
 
 # Used by detect_action() — YOLO already found bboxes, LLM only classifies action
 _ACTION_USER = (
-    "What hydration action is this factory worker performing?\n"
-    "{context}"
-    'Return JSON: {{"state":"<state>","confidence":<0.0-1.0>}}\n'
-    "States: idle, bottle_in_hand, cap_opening, drinking, completed."
+    "What is this worker doing?\n{context}"
+    'Return JSON: {{"state":"<hydration_state>","confidence":0.0-1.0,"activity":"<3-5 word description>"}}\n'
+    "Hydration states: idle, bottle_in_hand, cap_opening, drinking, completed.\n"
+    "Activity examples: 'drinking water', 'using phone', 'reading document', 'standing idle'."
 )
 
 # Fallback prompt used when no YOLO detection — full detection
 _FULL_USER = (
-    "Detect the hydration state in this image.\n"
-    'Return JSON: {{"state":"<state>","confidence":<0.0-1.0>,'
+    "Detect the worker's activity in this image.\n"
+    'Return JSON: {{"state":"<state>","confidence":<0.0-1.0>,"activity":"<3-5 word description>",'
     '"person_bbox":[x1,y1,x2,y2]or null,"bottle_bbox":[x1,y1,x2,y2]or null}}\n'
     "States: idle, bottle_in_hand, cap_opening, drinking, completed.\n"
+    "Activity examples: 'drinking water', 'using phone', 'reading document', 'standing idle'.\n"
     "Coordinates normalised 0.0-1.0."
 )
 
@@ -83,24 +84,19 @@ class VisionLLMDetector:
     async def detect_action(
         self,
         crop: np.ndarray,
-        bottle_detected: bool = False,
-    ) -> Tuple[ActionState, float]:
+        context: str = "",
+    ) -> Tuple[ActionState, float, str]:
         """
         Classify the hydration action visible in *crop*.
 
         crop    — BGR image, typically the person region from YOLO (with padding).
-        bottle_detected — whether YOLO already found a bottle near this person.
+        context — text description of nearby objects from YOLO (e.g. "YOLO detected: bottle near person.")
 
-        Returns (ActionState, confidence).
+        Returns (ActionState, confidence, activity_description).
         """
         if not self.client:
             await self.initialize()
 
-        context = (
-            "A water bottle is visible near the person. "
-            if bottle_detected
-            else "No bottle detected near the person. "
-        )
         prompt = _ACTION_USER.format(context=context)
 
         try:
@@ -131,13 +127,14 @@ class VisionLLMDetector:
             result = self._parse_response(response.choices[0].message.content or "")
             state = self._parse_state(result.get("state") or "idle")
             confidence = float(result.get("confidence", 0.0))
+            activity = str(result.get("activity", ""))
 
             self._last_detection_time = time.time()
-            return state, confidence
+            return state, confidence, activity
 
         except Exception as e:
             print(f"LLM action error: {e}")
-            return ActionState.UNCERTAIN, 0.0
+            return ActionState.UNCERTAIN, 0.0, ""
 
     async def detect(
         self,
@@ -178,6 +175,7 @@ class VisionLLMDetector:
 
             result = self._parse_response(response.choices[0].message.content or "")
             state = self._parse_state(result.get("state") or "idle")
+            activity = str(result.get("activity", ""))
             detection = PersonDetection(
                 track_id=track_id,
                 person_bbox=self._parse_bbox(result.get("person_bbox")),
@@ -186,6 +184,7 @@ class VisionLLMDetector:
                     state=state,
                     confidence=float(result.get("confidence", 0.0)),
                     signals=ActionSignals(),
+                    activity=activity,
                 ),
             )
             self._last_result = detection
@@ -202,6 +201,7 @@ class VisionLLMDetector:
                     state=ActionState.UNCERTAIN,
                     confidence=0.0,
                     signals=ActionSignals(),
+                    activity="",
                 ),
             )
 
