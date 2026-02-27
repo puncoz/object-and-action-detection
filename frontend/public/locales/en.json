@@ -1,0 +1,110 @@
+{
+    "app": {
+        "name": "Factory Action Console",
+        "tagline": "Hydration Detection System"
+    },
+    "nav": {
+        "liveMonitoring": "Live Monitoring",
+        "events": "Events",
+        "settings": "Settings"
+    },
+    "camera": {
+        "title": "Cameras",
+        "add": "Add Camera",
+        "start": "Start",
+        "stop": "Stop",
+        "status": {
+            "running": "Running",
+            "stopped": "Stopped",
+            "error": "Error"
+        },
+        "fps": "FPS",
+        "latency": "Latency",
+        "noCamera": "No camera selected",
+        "selectCamera": "Select a camera to view live feed"
+    },
+    "action": {
+        "title": "Action Status",
+        "states": {
+            "idle": "Idle",
+            "bottle_in_hand": "Holding Bottle",
+            "cap_opening": "Opening Cap",
+            "drinking": "Drinking",
+            "completed": "Completed",
+            "uncertain": "Uncertain"
+        },
+        "confidence": "Confidence",
+        "progress": {
+            "lift": "Lift",
+            "cap": "Cap",
+            "drink": "Drink"
+        }
+    },
+    "feed": {
+        "title": "Live Action Feed",
+        "empty": "No actions detected yet",
+        "newEvent": "New Event"
+    },
+    "timeline": {
+        "title": "Timeline",
+        "last10min": "Last 10 minutes"
+    },
+    "events": {
+        "title": "Events",
+        "filters": {
+            "dateRange": "Date Range",
+            "camera": "Camera",
+            "verified": "Verification",
+            "confidence": "Confidence",
+            "all": "All",
+            "verifiedOnly": "Verified",
+            "unverified": "Unverified",
+            "pending": "Pending"
+        },
+        "table": {
+            "time": "Time",
+            "camera": "Camera",
+            "confidence": "Confidence",
+            "sequence": "Sequence",
+            "status": "Status"
+        },
+        "noEvents": "No events found",
+        "loadMore": "Load More"
+    },
+    "eventDetail": {
+        "title": "Event Details",
+        "clip": "Video Clip",
+        "snapshot": "Snapshot",
+        "metadata": "Metadata",
+        "duration": "Duration",
+        "trackId": "Track ID",
+        "sequence": "Sequence",
+        "actions": {
+            "verify": "Verify",
+            "reject": "Reject",
+            "addNote": "Add Note",
+            "export": "Export JSON"
+        },
+        "note": {
+            "placeholder": "Add a note...",
+            "save": "Save Note"
+        },
+        "verified": "Verified",
+        "rejected": "Rejected",
+        "pending": "Pending Verification"
+    },
+    "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "retry": "Retry",
+        "close": "Close",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "search": "Search",
+        "from": "From",
+        "to": "To",
+        "apply": "Apply",
+        "reset": "Reset"
+    }
+}

@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-industrial-bg text-industrial-text font-mono;
+    }
+
+    ::-webkit-scrollbar {
+        @apply w-2;
+    }
+
+    ::-webkit-scrollbar-track {
+        @apply bg-industrial-surface;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        @apply bg-industrial-border rounded;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        @apply bg-industrial-muted;
+    }
+}
+
+@layer components {
+    .card {
+        @apply bg-industrial-surface border border-industrial-border rounded-lg p-4;
+    }
+
+    .btn {
+        @apply px-4 py-2 rounded font-medium transition-colors;
+    }
+
+    .btn-primary {
+        @apply bg-industrial-accent text-white hover:bg-blue-600;
+    }
+
+    .btn-success {
+        @apply bg-industrial-success text-white hover:bg-green-600;
+    }
+
+    .btn-danger {
+        @apply bg-industrial-danger text-white hover:bg-red-600;
+    }
+
+    .btn-ghost {
+        @apply bg-transparent text-industrial-muted hover:bg-industrial-border hover:text-industrial-text;
+    }
+
+    .input {
+        @apply bg-industrial-bg border border-industrial-border rounded px-3 py-2 text-industrial-text focus:outline-none focus:border-industrial-accent;
+    }
+
+    .badge {
+        @apply inline-flex items-center px-2 py-1 rounded text-xs font-medium;
+    }
+
+    .badge-success {
+        @apply bg-green-900/50 text-industrial-success border border-green-800;
+    }
+
+    .badge-warning {
+        @apply bg-yellow-900/50 text-industrial-warning border border-yellow-800;
+    }
+
+    .badge-danger {
+        @apply bg-red-900/50 text-industrial-danger border border-red-800;
+    }
+
+    .badge-info {
+        @apply bg-blue-900/50 text-industrial-accent border border-blue-800;
+    }
+}
+
+/* Video player aspect ratio */
+.video-container {
+    @apply relative w-full;
+    padding-top: 56.25%;
+    /* 16:9 aspect ratio */
+}
+
+.video-container>* {
+    @apply absolute inset-0 w-full h-full object-contain;
+}
+
+/* Action state colors */
+.state-idle {
+    @apply text-industrial-muted;
+}
+
+.state-bottle_in_hand {
+    @apply text-orange-400;
+}
+
+.state-cap_opening {
+    @apply text-yellow-400;
+}
+
+.state-drinking {
+    @apply text-industrial-success;
+}
+
+.state-completed {
+    @apply text-purple-400;
+}
+
+.state-uncertain {
+    @apply text-industrial-danger;
+}

@@ -1,0 +1,110 @@
+{
+    "app": {
+        "name": "ファクトリーアクションコンソール",
+        "tagline": "水分補給検出システム"
+    },
+    "nav": {
+        "liveMonitoring": "ライブモニタリング",
+        "events": "イベント",
+        "settings": "設定"
+    },
+    "camera": {
+        "title": "カメラ",
+        "add": "カメラを追加",
+        "start": "開始",
+        "stop": "停止",
+        "status": {
+            "running": "稼働中",
+            "stopped": "停止中",
+            "error": "エラー"
+        },
+        "fps": "FPS",
+        "latency": "遅延",
+        "noCamera": "カメラが選択されていません",
+        "selectCamera": "ライブフィードを表示するカメラを選択してください"
+    },
+    "action": {
+        "title": "アクション状態",
+        "states": {
+            "idle": "待機中",
+            "bottle_in_hand": "ボトルを持っている",
+            "cap_opening": "キャップを開けている",
+            "drinking": "飲んでいる",
+            "completed": "完了",
+            "uncertain": "不明"
+        },
+        "confidence": "信頼度",
+        "progress": {
+            "lift": "持つ",
+            "cap": "開ける",
+            "drink": "飲む"
+        }
+    },
+    "feed": {
+        "title": "ライブアクションフィード",
+        "empty": "アクションはまだ検出されていません",
+        "newEvent": "新しいイベント"
+    },
+    "timeline": {
+        "title": "タイムライン",
+        "last10min": "過去10分"
+    },
+    "events": {
+        "title": "イベント",
+        "filters": {
+            "dateRange": "日付範囲",
+            "camera": "カメラ",
+            "verified": "確認状態",
+            "confidence": "信頼度",
+            "all": "すべて",
+            "verifiedOnly": "確認済み",
+            "unverified": "未確認",
+            "pending": "保留中"
+        },
+        "table": {
+            "time": "時間",
+            "camera": "カメラ",
+            "confidence": "信頼度",
+            "sequence": "シーケンス",
+            "status": "状態"
+        },
+        "noEvents": "イベントが見つかりません",
+        "loadMore": "もっと読み込む"
+    },
+    "eventDetail": {
+        "title": "イベント詳細",
+        "clip": "ビデオクリップ",
+        "snapshot": "スナップショット",
+        "metadata": "メタデータ",
+        "duration": "期間",
+        "trackId": "トラックID",
+        "sequence": "シーケンス",
+        "actions": {
+            "verify": "確認",
+            "reject": "却下",
+            "addNote": "メモを追加",
+            "export": "JSONエクスポート"
+        },
+        "note": {
+            "placeholder": "メモを追加...",
+            "save": "メモを保存"
+        },
+        "verified": "確認済み",
+        "rejected": "却下",
+        "pending": "確認待ち"
+    },
+    "common": {
+        "loading": "読み込み中...",
+        "error": "エラー",
+        "retry": "再試行",
+        "close": "閉じる",
+        "save": "保存",
+        "cancel": "キャンセル",
+        "delete": "削除",
+        "search": "検索",
+        "from": "開始",
+        "to": "終了",
+        "apply": "適用",
+        "reset": "リセット"
+    }
+}
